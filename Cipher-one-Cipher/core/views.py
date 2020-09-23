@@ -171,6 +171,8 @@ def dissatisfy(request):
     return render(request, "listing.html", {'dataframe':search_result})
 
 def profile(request):
+    qs = Patient.objects.all()
+    patients = read_frame(qs)
     UID = request.GET.get("UI")
     print(UID)
     df = patients.loc[patients['UID'] == UID]
@@ -213,12 +215,34 @@ def book(request):
     return render(request, "profile.html", {'data': df, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
 
 def address(request):
+    qs = Patient.objects.all()
+    patients = read_frame(qs)
     UID = request.POST.get('UID')
     street = request.POST.get('street')
     city = request.POST.get('city')
     state = request.POST.get('state')
     pin = request.POST.get('pin')
-    return render(request, "profile.html", {'data':df, 'doctor':doc})
+    t = Patient.objects.get(UID=UID)
+    t.Street = street
+    t.City = city
+    t.State = state
+    t.Pin = pin
+    t.save()
+    print(UID)
+    df = patients.loc[patients['UID'] == UID]
+    # df['Current'][0] = NPI
+    doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
+    doc = doc.loc[doc['National Provider Identifier'] == df['Current'][0]]
+    doc = doc.rename(columns={'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name',
+                              'Last Name/Organization Name of the Provider': 'Last_name',
+                              'Provider Type of the Provider': 'Type'})
+    npi = str(doc.NPI).split()[1]
+    f_name = str(doc.First_name).split()[1]
+    l_name = str(doc.Last_name).split()[1]
+    type = str(doc.Type).split()[1]
+    print(npi, f_name, l_name, type)
+    return render(request, "profile.html", {'data': df, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
+    # return render(request, "profile.html", {'data':df, 'doctor':doc})
 
 def addview(request):
 

@@ -7,17 +7,21 @@
     <p><b>UID: </b><input type="text" name="UID" id = "UID"></p>
     <p><b>Street: </b><input type="text" name="street" id= "street"></p>
     <p><b>City: </b><input type="text" name="city" id="city"></p>
-    <p><b>State: </b><input type="text" name="city" id="city"></p>
+    <p><b>State: </b><input type="text" name="state" id="state"></p>
     <p><b>PIN: </b><input type="number" name="pin" id="pin"></p>
     <input type="submit">
 </form>
 {#<script>#}
-{#    function add_change(){#}
-{#        var id = document.getElementById("make").value#}
+{#    function add_view(){#}
+{#        var uid = document.getElementById("UID").value#}
+{#        var street = document.getElementById("street").value#}
+{#        var city = document.getElementById("city").value#}
+{#        var  state= document.getElementById("state").value#}
+{#        var pin = document.getElementById("pin").value#}
 {#        $.ajax({#}
 {#            type: "POST",#}
-{#            url: '{% url 'book' %}',#}
-{#            data: { csrfmiddlewaretoken: '{{ csrf_token }}', npi:npi },#}
+{#            url: '{% url 'add_view' %}',#}
+{#            data: { csrfmiddlewaretoken: '{{ csrf_token }}', uid:uid, city:city, street:street, state:state, pin:pin },#}
 {#            success: function(){#}
 {#                alert("Done");#}
 {#            }#}
