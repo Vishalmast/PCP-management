@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+
+
+{% block content %}
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {font-family: Arial, Helvetica, sans-serif;}
+        * {box-sizing: border-box;}
+        
+        /* Button used to open the contact form - fixed at the bottom of the page */
+        .open-button {
+        background-color: #555;
+        color: white;
+        padding: 16px 20px;
+        border: none;
+        cursor: pointer;
+        opacity: 0.8;
+        position: fixed;
+        bottom: 23px;
+        right: 28px;
+        width: 280px;
+        }
+        
+        /* The popup form - hidden by default */
+        .form-popup {
+        display: none;
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        border: 3px solid #f1f1f1;
+        z-index: 9;
+        }
+        
+        /* Add styles to the form container */
+        .form-container {
+        max-width: 300px;
+        padding: 10px;
+        background-color: white;
+        }
+        
+        /* Full-width input fields */
+        .form-container input[type=text], .form-container input[type=password] {
+        width: 100%;
+        padding: 15px;
+        margin: 5px 0 22px 0;
+        border: none;
+        background: #f1f1f1;
+        }
+        
+        /* When the inputs get focus, do something */
+        .form-container input[type=text]:focus, .form-container input[type=password]:focus {
+        background-color: #ddd;
+        outline: none;
+        }
+        
+        /* Set a style for the submit/login button */
+        .form-container .btn {
+        background-color: #4CAF50;
+        color: white;
+        padding: 16px 20px;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        margin-bottom:10px;
+        opacity: 0.8;
+        }
+        
+        /* Add a red background color to the cancel button */
+        .form-container .cancel {
+        background-color: grey;
+        }
+        
+        /* Add some hover effects to buttons */
+        .form-container .btn:hover, .open-button:hover {
+        opacity: 1;
+        }
+    </style>
+</head>
+<button class="btn" onclick="openForm()">Check Your PCP here</button><br>
+
+<div class="form-popup" id="myForm">
+  <form method="GET" action="{% url "profile" %}" class="form-container">
+
+    <label for="UI"><b>UID</b></label>
+    <input type="text" placeholder="UID" name="UI" id="UI" required>
+
+    <button type="submit" class="btn">My Profile</button>
+    <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
+  </form>
+</div>
+<a href="{% url "lists" %}">Discuss Your Symptoms With Us</a><br>
+
+
+<h3 class="mt-2">PCPs near You</h3>
+<b>{{name}}</b><br>
+<b>{{street}} , </b>  <b>{{city}} , {{state}}</b>
+{% for idx,doctor in dataframe.iterrows %}
+ 
+  <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">{{doctor.First_name}}, {{doctor.Last_name}}</h5>
+        <p class="card-text" ><b>NPI: </b>{{doctor.NPI}}</p>
+        <p class="card-text"><b>{{doctor.Type}}</b></p>
+        <p class="card-text"><small class="text-muted"><b>Address:</b> {{doctor.Address}} </small></p>
+        <p class="card-text"><small class="text-muted"><b>Distance:</b> {{doctor.distance}} KM </small></p>
+        <p class="card-text"><small class="text-muted"><b>Ratings:</b> {{doctor.ratings}} out of 5 </small></p>
+        <button onclick="book()" value="{{doctor.NPI}}" id="make">Make My PCP</button>
+      </div>
+  </div>
+  <script>
+    function book(){
+        var npi = document.getElementById("make").value
+        $.ajax({
+            type: "POST",
+            url: '{% url 'book' %}',
+            data: { csrfmiddlewaretoken: '{{ csrf_token }}', npi:npi },
+            success: function(){
+                alert("Done");
+            }
+        });
+    }
+</script>
+{% endfor %}  
+<script>
+    function openForm() {
+      document.getElementById("myForm").style.display = "block";
+    }
+    
+    function closeForm() {
+      document.getElementById("myForm").style.display = "none";
+    }
+</script>
+
+{% endblock %}

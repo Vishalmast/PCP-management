@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="row">
+    
+    <h2>Patient Details</h2>
+    <form method="POST" action="{% url 'addInfo' %}">
+        {% csrf_token %}
+        <p><b>UID:     </b><input type="text" name="UID" id="UID"></p>
+        
+        <h4>Symptoms:</h4>
+        {% for sym in symptoms %}
+            <input type="checkbox" id="cb1" name="cb1" value="{{sym}}" onclick="symchecked()"><b>{{sym}}</b>
+        {% endfor %}
+        <h4>Past Diseases:</h4>
+        {% for dis in diseases %}
+            <input type="checkbox" id="cb2" name="cb2" value="{{dis}}" onclick="dischecked()"><b>{{dis}}</b>
+        {% endfor %}
+        <br><br>
+        <input type="submit" class="dplay-block btn-brdr-primary mt-20 mb-md-50" value="Find my PCP" >
+    </form>
+    <br><br><br><br>
+
+</div>
+{% endblock %}
+
+<script>
+    var title = [];
+    var i = [];
+    
+    function symchecked(){
+        var a = document.getElementById(cb1).value;
+        title.push(a)
+    }
+
+    function dischecked(){
+        var a = document.getElementById(cb2).value;
+        title.push(a)
+    }
+</script>

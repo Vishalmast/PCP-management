@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h5>Dependent Details:</h5>
+<div class="card mb-3">
+    <div class="card-body">
+        <b>Name:</b> {{data.Name.0}}<br>
+        <p class="card-text">{{data.Street.0}}, {{data.City.0}}, {{data.State.0}}<br>
+        <a href="{% url 'addview' %}">Change Address</a>
+        <br><p class="card-text"><b>Assigned PCP: </b></p>
+        {{f_name}}, {{l_name}}
+        <br><b>NPI:</b>{{npi}}
+        <br><b>TYPE:</b>{{ type }}
+        {% if data.Book_Date.0 == null %}
+        <br><button>Book Appointment</button>
+        {% else %}
+        <br><p class="cards-text"><b>Upcoming Booking: </b>
+        {{data.Book_Date.0}}</p>
+        {% endif %}
+    </div>
+</div>
+
+
+
+
+{% endblock %}

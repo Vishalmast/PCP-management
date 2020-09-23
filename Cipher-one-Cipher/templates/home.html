@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<a href="{% url "add_listing" %}">Discuss Your Symptoms With Us</a>
+<h3 class="mt-2">PCPs near You</h3>
+<div class="col-md-8 mt-3">    
+    {% for listing in listings %}
+    <div class="card">   
+      <div class="card-body">
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
