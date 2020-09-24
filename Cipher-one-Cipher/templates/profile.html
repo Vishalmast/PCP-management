@@ -1,26 +1,108 @@
 {% extends 'base.html' %}
 {% block content %}
 
+    
+
 <h5>Dependent Details:</h5>
 <div class="card mb-3">
     <div class="card-body">
-        <b>Name:</b> {{data.Name.0}}<br>
-        <p class="card-text">{{data.Street.0}}, {{data.City.0}}, {{data.State.0}}<br>
+        <b>Name:</b> {{ pname }}<br>
+        <p class="card-text">{{ street }}, {{ city }}, {{ state }}<br>
         <a href="{% url 'addview' %}">Change Address</a>
         <br><p class="card-text"><b>Assigned PCP: </b></p>
         {{f_name}}, {{l_name}}
         <br><b>NPI:</b>{{npi}}
-        <br><b>TYPE:</b>{{ type }}
-        {% if data.Book_Date.0 == null %}
-        <br><button>Book Appointment</button>
-        {% else %}
-        <br><p class="cards-text"><b>Upcoming Booking: </b>
-        {{data.Book_Date.0}}</p>
-        {% endif %}
+        <br><b>TYPE:</b>{{ type }}<br><br>
+        <!-- Trigger/Open The Modal -->
+        <button id="myBtn">Schedule An Appointment</button>
+
+        <!-- The Modal -->
+        <div id="myModal" class="modal">
+
+            <!-- Modal content -->
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <div class="form-popup" id="myForm">
+                    <form method = "GET" action= "{% url 'schedule' %}">
+                        <input type="text" name="UID" value = "{{ UID }}" ><br><br>
+                        <input type="number" name= "NPI" value= "{{ npi }}"><br><br>
+                        <label for="schedule">Schedule (date and time):</label>
+                        <input type="date" id=scheduletime" name="scheduletime">
+                        <br><input type="submit">
+                      </form>
+                    </form>
+                  </div>
+            </div>
+
+        </div>
     </div>
 </div>
 
 
+<style>
+    /* The Modal (background) */
+    .modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  }
+  
+  /* Modal Content/Box */
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Could be more or less, depending on screen size */
+  }
+  
+  /* The Close Button */
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+  }
+  
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+</style>
+<script>
+    var modal = document.getElementById("myModal");
 
+    // Get the button that opens the modal
+    var btn = document.getElementById("myBtn");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks on the button, open the modal
+    btn.onclick = function() {
+    modal.style.display = "block";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+    modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+    }
+</script>
 
 {% endblock %}

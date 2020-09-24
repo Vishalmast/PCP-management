@@ -8,7 +8,7 @@ from plotly.graph_objs import Heatmap
 from plotly.graph_objs import Bar, Scatter
 import json
 import plotly
-
+from django.db.models import F
 
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse, HttpResponse
@@ -84,6 +84,83 @@ disease_specialist_mapping = {'Migraine': 'Neurologists',
 patients = read_frame(qs)
 df_patient_data = read_frame(Patient.objects.all())
 df_upcoming_patients = read_frame(Upcoming_patient.objects.all())
+
+
+def schedule(request):
+    UID = request.GET.get('UID', '')
+    schedule_date = request.GET.get('scheduletime', '')
+
+    qs = Patient.objects.all()
+    patients = read_frame(qs)
+    df = patients.loc[patients['UID'] == UID]
+
+    if (df.empty):
+        return render(request, 'not_register.html')
+    if (list(df['Current'])[0] == 0):
+        doc = pd.DataFrame()
+    else:
+        doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
+        doc = doc.loc[doc['National Provider Identifier'] == df['Current'][0]]
+        doc = doc.rename(columns={'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name',
+                                  'Last Name/Organization Name of the Provider': 'Last_name',
+                                  'Provider Type of the Provider': 'Type', 'Fees': 'fee'})
+    npi = str(doc.NPI).split()[1]
+    f_name = str(doc.First_name).split()[1]
+    l_name = str(doc.Last_name).split()[1]
+    type = str(doc.Type).split()[1]
+    bill = float(str(doc.fee).split()[1])
+
+    # qs = Patient.objects.filter(UID=F("UID"))
+    # print(qs)
+    deductible = df.loc[0, 'Deductible']
+    deductible_paid = df.loc[0, 'Deduct_Paid']
+    copay = df.loc[0, 'Copay']
+    coinsurance = df.loc[0, 'Coinsurance']
+    limit = df.loc[0, 'out_of_pocket_limit']
+    left = df.loc[0, 'Limit_left']
+
+    def compute_payment(bill, deductible, deductible_paid, copay, coinsurance, limit, left):
+        bill_left = bill
+        payment_by_dependant = 0
+        payment_by_payor = 0
+        if deductible_paid < deductible:
+            payment_by_dependant = min(deductible - deductible_paid, bill)
+            deductible_paid += payment_by_dependant
+            left -= payment_by_dependant
+            bill_left -= payment_by_dependant
+        if bill_left > copay and left > copay:
+            payment_by_dependant += min(left, copay + (bill_left - copay) * 0.2)
+            left -= min(left, copay + (bill_left - copay) * 0.2)
+            payment_by_payor = bill - payment_by_dependant
+        elif bill_left <= copay and left > copay:
+            payment_by_dependant += bill_left
+            left -= bill_left
+            payment_by_payor = bill - payment_by_dependant
+        else:
+            payment_by_dependant += left
+            left = 0
+            payment_by_payor = bill - payment_by_dependant
+        return payment_by_dependant, payment_by_payor, deductible_paid, left
+
+    payment_by_dependant, payment_by_payor, deductible_paid, left = compute_payment(bill, deductible, deductible_paid, copay, coinsurance, limit, left)
+    t = Patient.objects.get(UID=UID)
+    t.Deduct_Paid = deductible_paid
+    t.Limit_left = left
+    t.save()
+
+    t = Upcoming_patient.objects
+    t.create(UID = UID, Scheduled_date = schedule_date, Payment_by_payer = payment_by_payor, Payment_by_dependant=payment_by_dependant)
+
+    pname = df.loc[0, 'Name']
+    state = df.loc[0, 'State']
+    street = df.loc[0, 'Street']
+    city = df.loc[0, 'City']
+    
+    return render(request, "profile.html",
+                  {'UID': UID, 'pname': pname, 'street': street, 'city': city, 'state': state, 'npi': npi,
+                   'f_name': f_name, 'l_name': l_name, 'type': type})
+    # return render(request, "profile.html")
+
 
 def ins(request):
     def patients_list_for_provider(ins_plan):
@@ -167,7 +244,6 @@ def ins(request):
 def go(request):
     # save user input in query
     query = request.GET.get('query', '')
-    query2 = request.GET.get('query2', '')
     def patients_list_for_provider(ins_plan):
         li = []
         for i in range(df_patient_data.shape[0]):
@@ -345,21 +421,26 @@ def profile(request):
     UID = request.GET.get("UI")
     print(UID)
     df = patients.loc[patients['UID'] == UID]
-    
     if(df.empty):
         return render(request, 'not_register.html')
+    else:
+        pname = list(df['Name'])[0]
+        street = list(df['Street'])[0]
+        city = list(df['City'])[0]
+        state = list(df['State'])[0]
     if(list(df['Current'])[0]==0):
         doc = pd.DataFrame()
     else:
         doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
-        doc = doc.loc[doc['National Provider Identifier'] == df['Current'][0]]
+        doc = doc.loc[doc['National Provider Identifier'] == list(df['Current'])[0]]
         doc = doc.rename(columns = {'National Provider Identifier': 'NPI','First Name of the Provider': 'First_name','Last Name/Organization Name of the Provider': 'Last_name', 'Provider Type of the Provider': 'Type'})
     npi = str(doc.NPI).split()[1]
     f_name = str(doc.First_name).split()[1]
     l_name = str(doc.Last_name).split()[1]
     type = str(doc.Type).split()[1]
     print(npi, f_name, l_name, type)
-    return render(request, "profile.html", {'data': df, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
+    return render(request, "profile.html", {'UID': UID, 'pname': pname, 'street': street, 'city': city, 'state': state, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
+
 
 def book(request):
     global UID

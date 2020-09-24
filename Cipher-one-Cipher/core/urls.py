@@ -14,4 +14,5 @@ urlpatterns = [
     path('addview',addview, name='addview'),
     path('ins',ins, name='ins'),
     path('go',go, name='go'),
+    path('schedule',schedule, name='schedule'),
 ]
