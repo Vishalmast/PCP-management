@@ -1,5 +1,15 @@
 from django.shortcuts import render
 
+
+import datetime
+from datetime import date
+from plotly.graph_objs import Bar
+from plotly.graph_objs import Heatmap
+from plotly.graph_objs import Bar, Scatter
+import json
+import plotly
+
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import Http404, JsonResponse, HttpResponse
 from django.views.generic import DetailView
@@ -72,7 +82,166 @@ disease_specialist_mapping = {'Migraine': 'Neurologists',
 #"City" : ["Detroit","YAKIMA"], "State" : ["MI","WA"], "PIN" : [12345,345678], "Diss" : [[1598971327],[]]})
 
 patients = read_frame(qs)
+df_patient_data = read_frame(Patient.objects.all())
+df_upcoming_patients = read_frame(Upcoming_patient.objects.all())
 
+def ins(request):
+    def patients_list_for_provider(ins_plan):
+        li = []
+        for i in range(df_patient_data.shape[0]):
+            if df_patient_data.loc[i, 'Insurance_policy_plan'] == ins_plan:
+                li.append(df_patient_data.loc[i, 'UID'])
+        return li
+
+    def upcoming_charges(patient_li, days_to_track=7):
+        today = datetime.date.today()
+        li = [0 for i in range(days_to_track)]
+        li2 = [0 for i in range(days_to_track)]
+        li_date = []
+        for i in range(days_to_track):
+            li_date.append(today)
+            today += datetime.timedelta(days=1)
+
+        for ind, date in enumerate(li_date):
+            for i in range(df_upcoming_patients.shape[0]):
+                if df_upcoming_patients.loc[i, 'Scheduled_date'] == date and df_upcoming_patients.loc[i, 'UID'] in patient_li:
+                    li[ind] += df_upcoming_patients.loc[i, 'Payment_by_payer']
+                    li2[ind] += df_upcoming_patients.loc[i, 'Payment_by_dependent']
+        return li, li_date, li2
+
+    li_a, li_date, li2_a = upcoming_charges(patients_list_for_provider('a'))
+    li_b, li_date, li2_b = upcoming_charges(patients_list_for_provider('b'))
+    li_c, li_date, li2_c = upcoming_charges(patients_list_for_provider('c'))
+    for i in range(len(li_a)):
+        li_a[i] = li_a[i] + li_b[i] + li_c[i]
+    for i in range(len(li_a)):
+        li2_a[i] = li2_a[i] + li2_b[i] + li2_c[i]
+    li = li_a
+    li2 = li_a
+    graphs = [
+        {
+            'data': [
+                Bar(
+                    x=li_date,
+                    y=li
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of upcoming charges',
+                'yaxis': {
+                    'title': "Charge"
+                },
+                'xaxis': {
+                    'title': "Date"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=li_date,
+                    y=li2
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of upcoming charges for dependent',
+                'yaxis': {
+                    'title': "Charge"
+                },
+                'xaxis': {
+                    'title': "Date"
+                }
+            }
+        }
+    ]
+
+    # encode plotly graphs in JSON
+    ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
+    graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+
+    return render(request, 'insaurance_page.html', {'ids': ids, 'graphJSON': graphJSON})
+
+
+def go(request):
+    # save user input in query
+    query = request.GET.get('query', '')
+
+    def patients_list_for_provider(ins_plan):
+        li = []
+        for i in range(df_patient_data.shape[0]):
+            if df_patient_data.loc[i, 'Insurance_policy_plan'] == ins_plan:
+                li.append(df_patient_data.loc[i, 'UID'])
+        return li
+
+    def upcoming_charges(patient_li, days_to_track=7):
+        today = datetime.date.today()
+        li = [0 for i in range(days_to_track)]
+        li2 = [0 for i in range(days_to_track)]
+        li_date = []
+        for i in range(days_to_track):
+            li_date.append(today)
+            today += datetime.timedelta(days=1)
+
+        for ind, date in enumerate(li_date):
+            for i in range(df_upcoming_patients.shape[0]):
+                if df_upcoming_patients.loc[i, 'Scheduled_date'] == date and df_upcoming_patients.loc[i, 'UID'] in patient_li:
+                    li[ind] += df_upcoming_patients.loc[i, 'Payment_by_payer']
+                    li2[ind] += df_upcoming_patients.loc[i, 'Payment_by_payer']
+        return li, li_date, li2
+
+    li, li_date, li2 = upcoming_charges(patients_list_for_provider(query))
+
+    graphs = [
+        {
+            'data': [
+                Bar(
+                    x=li_date,
+                    y=li
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of upcoming charges',
+                'yaxis': {
+                    'title': "Charge"
+                },
+                'xaxis': {
+                    'title': "Date"
+                }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=li_date,
+                    y=li2
+                )
+            ],
+
+            'layout': {
+                'title': 'Distribution of upcoming charges for dependent',
+                'yaxis': {
+                    'title': "Charge"
+                },
+                'xaxis': {
+                    'title': "Date"
+                }
+            }
+        }]
+
+    # encode plotly graphs in JSON
+    ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
+    graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+
+    # This will render the go.html Please see that file.
+    return render(
+        request,
+        'insaurance_extended.html',
+
+        {'query': query, 'classification_result': None, 'ids': ids, 'graphJSON': graphJSON}
+    )
 def lists(request):
     symptoms = symptoms_list
     diseases = disease_list 

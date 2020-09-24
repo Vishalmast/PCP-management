@@ -15,6 +15,13 @@ class Category(models.Model):
         verbose_name_plural = "Categories"
 
 
+class Upcoming_patient(models.Model):
+    UID = models.CharField(max_length=10, primary_key=True)
+    Scheduled_date = models.DateField()
+    Payment_by_payer = models.FloatField()
+    Payment_by_dependant = models.FloatField()
+
+
 class Upcoming_patients(models.Model):
     UID = models.CharField(max_length=10, primary_key=True)
     Scheduled_date = models.DateField()
