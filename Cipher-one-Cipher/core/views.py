@@ -106,7 +106,7 @@ def ins(request):
             for i in range(df_upcoming_patients.shape[0]):
                 if df_upcoming_patients.loc[i, 'Scheduled_date'] == date and df_upcoming_patients.loc[i, 'UID'] in patient_li:
                     li[ind] += df_upcoming_patients.loc[i, 'Payment_by_payer']
-                    li2[ind] += df_upcoming_patients.loc[i, 'Payment_by_dependent']
+                    li2[ind] += df_upcoming_patients.loc[i, 'Payment_by_dependant']
         return li, li_date, li2
 
     li_a, li_date, li2_a = upcoming_charges(patients_list_for_provider('a'))
@@ -167,7 +167,7 @@ def ins(request):
 def go(request):
     # save user input in query
     query = request.GET.get('query', '')
-
+    query2 = request.GET.get('query2', '')
     def patients_list_for_provider(ins_plan):
         li = []
         for i in range(df_patient_data.shape[0]):
@@ -188,7 +188,7 @@ def go(request):
             for i in range(df_upcoming_patients.shape[0]):
                 if df_upcoming_patients.loc[i, 'Scheduled_date'] == date and df_upcoming_patients.loc[i, 'UID'] in patient_li:
                     li[ind] += df_upcoming_patients.loc[i, 'Payment_by_payer']
-                    li2[ind] += df_upcoming_patients.loc[i, 'Payment_by_payer']
+                    li2[ind] += df_upcoming_patients.loc[i, 'Payment_by_dependant']
         return li, li_date, li2
 
     li, li_date, li2 = upcoming_charges(patients_list_for_provider(query))
