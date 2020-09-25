@@ -155,7 +155,7 @@ def schedule(request):
     state = df.loc[0, 'State']
     street = df.loc[0, 'Street']
     city = df.loc[0, 'City']
-    
+
     return render(request, "profile.html",
                   {'UID': UID, 'pname': pname, 'street': street, 'city': city, 'state': state, 'npi': npi,
                    'f_name': f_name, 'l_name': l_name, 'type': type})
@@ -194,7 +194,7 @@ def ins(request):
     for i in range(len(li_a)):
         li2_a[i] = li2_a[i] + li2_b[i] + li2_c[i]
     li = li_a
-    li2 = li_a
+    li2 = li2_a
     graphs = [
         {
             'data': [
@@ -325,6 +325,8 @@ def lists(request):
     return render(request, 'add_listing.html', {'symptoms': symptoms, 'diseases':diseases})
 
 def addInfo(request):
+    qs = Patient.objects.all()
+    patients = read_frame(qs)
     global UID,name, age, street, city, pin, search_result, df
     UID = request.POST.get("UID")
     #This is to use for database to check if exist or not
@@ -473,26 +475,65 @@ def address(request):
     state = request.POST.get('state')
     pin = request.POST.get('pin')
     t = Patient.objects.get(UID=UID)
+    name = t.Name
     t.Street = street
     t.City = city
     t.State = state
     t.Pin = pin
+    cur = t.Current
     t.save()
-    print(UID)
-    df = patients.loc[patients['UID'] == UID]
+    # print(UID)
+    # df = patients.loc[patients['UID'] == UID]
     # df['Current'][0] = NPI
+    # doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
+    # doc = doc.loc[doc['National Provider Identifier'] == df['Current'][0]]
+    # doc = doc.rename(columns={'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name',
+    #                           'Last Name/Organization Name of the Provider': 'Last_name',
+    #                           'Provider Type of the Provider': 'Type'})
+    # npi = str(doc.NPI).split()[1]
+    # f_name = str(doc.First_name).split()[1]
+    # l_name = str(doc.Last_name).split()[1]
+    # type = str(doc.Type).split()[1]
+    # print(npi, f_name, l_name, type)
+    # return render(request, "profile.html", {'data': df, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
+    # # return render(request, "profile.html", {'data':df, 'doctor':doc})
     doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
-    doc = doc.loc[doc['National Provider Identifier'] == df['Current'][0]]
-    doc = doc.rename(columns={'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name',
-                              'Last Name/Organization Name of the Provider': 'Last_name',
-                              'Provider Type of the Provider': 'Type'})
-    npi = str(doc.NPI).split()[1]
-    f_name = str(doc.First_name).split()[1]
-    l_name = str(doc.Last_name).split()[1]
+    doc = doc.loc[doc['National Provider Identifier'] == cur]
+    doc = doc.rename(columns={'Provider Type of the Provider': 'Type'})
     type = str(doc.Type).split()[1]
-    print(npi, f_name, l_name, type)
-    return render(request, "profile.html", {'data': df, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
-    # return render(request, "profile.html", {'data':df, 'doctor':doc})
+    specialist = type
+    print(specialist)
+    doc_database = pd.read_csv('core\doctor_database_geocoded_final.csv')
+    from geopy.geocoders import ArcGIS
+    nom = ArcGIS()
+    location = nom.geocode(street + ' ' + city + ' ' + state + ' US')
+    user_lat = location.latitude
+    user_lon = location.longitude
+    print(user_lat, user_lon)
+    print(location.address)
+    doc_subset = doc_database[doc_database['Provider Type of the Provider'] == specialist]
+    from geopy import distance
+
+    for i in doc_subset.index:
+        doc_subset.loc[i, 'distance'] = distance.distance(
+            (doc_subset.loc[i, 'Latitude'], doc_subset.loc[i, 'Longitude']), (user_lat, user_lon)).km
+    doc_subset['score'] = doc_subset['distance'] - doc_subset['ratings'] * 2
+    search_result = doc_subset.sort_values('score')[
+        ['National Provider Identifier', 'First Name of the Provider', 'Last Name/Organization Name of the Provider',
+         'Provider Type of the Provider', 'Address', 'distance', 'ratings']]
+    search_result = search_result.rename(
+        columns={'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name',
+                 'Last Name/Organization Name of the Provider': 'Last_name', 'Provider Type of the Provider': 'Type'})
+    search_result = search_result.head(50)
+    NPIs = search_result["NPI"].tolist()
+
+    search_result = search_result.round({"distance": 2, "ratings": 2})
+
+
+    return render(request, "listing.html",
+                  {'dataframe': search_result.head(20), 'name': name, 'street': street, 'city': city, 'state': state,
+                   'uid': UID})
+
 
 def addview(request):
 
