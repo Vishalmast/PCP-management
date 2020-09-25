@@ -14,7 +14,11 @@
         <br><b>NPI:</b>{{npi}}
         <br><b>TYPE:</b>{{ type }}<br><br>
         <!-- Trigger/Open The Modal -->
+        {% if flag == 1 %}
+        <p class =  "card-text">Upcoming booking: {{ booking_date }}</p>
+        {% else %}
         <button id="myBtn">Schedule An Appointment</button>
+        {% endif %}
 
         <!-- The Modal -->
         <div id="myModal" class="modal">

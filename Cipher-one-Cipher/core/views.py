@@ -100,7 +100,7 @@ def schedule(request):
         doc = pd.DataFrame()
     else:
         doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
-        doc = doc.loc[doc['National Provider Identifier'] == df['Current'][0]]
+        doc = doc.loc[doc['National Provider Identifier'] == list(df['Current'])[0]]
         doc = doc.rename(columns={'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name',
                                   'Last Name/Organization Name of the Provider': 'Last_name',
                                   'Provider Type of the Provider': 'Type', 'Fees': 'fee'})
@@ -112,12 +112,14 @@ def schedule(request):
 
     # qs = Patient.objects.filter(UID=F("UID"))
     # print(qs)
-    deductible = df.loc[0, 'Deductible']
-    deductible_paid = df.loc[0, 'Deduct_Paid']
-    copay = df.loc[0, 'Copay']
-    coinsurance = df.loc[0, 'Coinsurance']
-    limit = df.loc[0, 'out_of_pocket_limit']
-    left = df.loc[0, 'Limit_left']
+    print(df)
+    print(df.iloc[0, 11])
+    deductible = df.iloc[0, 11]
+    deductible_paid = df.iloc[0, 12]
+    copay = df.iloc[0, 9]
+    coinsurance = df.iloc[0, 10]
+    limit = df.iloc[0, 7]
+    left = df.iloc[0, 8]
 
     def compute_payment(bill, deductible, deductible_paid, copay, coinsurance, limit, left):
         bill_left = bill
@@ -151,10 +153,10 @@ def schedule(request):
     t = Upcoming_patient.objects
     t.create(UID = UID, Scheduled_date = schedule_date, Payment_by_payer = payment_by_payor, Payment_by_dependant=payment_by_dependant)
 
-    pname = df.loc[0, 'Name']
-    state = df.loc[0, 'State']
-    street = df.loc[0, 'Street']
-    city = df.loc[0, 'City']
+    pname = df.iloc[0, 1]
+    state = df.iloc[0, 4]
+    street = df.iloc[0, 2]
+    city = df.iloc[0, 3]
 
     return render(request, "profile.html",
                   {'UID': UID, 'pname': pname, 'street': street, 'city': city, 'state': state, 'npi': npi,
@@ -420,9 +422,18 @@ def dissatisfy(request):
 def profile(request):
     qs = Patient.objects.all()
     patients = read_frame(qs)
+    qs_2 = Upcoming_patient.objects.all()
+    upcoming_patients = read_frame(qs_2)
     UID = request.GET.get("UI")
     print(UID)
     df = patients.loc[patients['UID'] == UID]
+    df2 = upcoming_patients.loc[upcoming_patients['UID'] == UID]
+    flag = 1
+    booking_date = None
+    if df2.empty:
+        flag = 0
+    else:
+        booking_date = df2.iloc[0, 1]
     if(df.empty):
         return render(request, 'not_register.html')
     else:
@@ -441,7 +452,8 @@ def profile(request):
     l_name = str(doc.Last_name).split()[1]
     type = str(doc.Type).split()[1]
     print(npi, f_name, l_name, type)
-    return render(request, "profile.html", {'UID': UID, 'pname': pname, 'street': street, 'city': city, 'state': state, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
+
+    return render(request, "profile.html", {'flag': flag, 'booking_date':booking_date,'UID': UID, 'pname': pname, 'street': street, 'city': city, 'state': state, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
 
 
 def book(request):
