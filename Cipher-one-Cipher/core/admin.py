@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from .models import Category, Patients
+from .models import Category
 from .models import *
 
 
@@ -22,9 +22,10 @@ class PatientAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-admin.site.register(Category)
-admin.site.register(Patients, PatientAdmin)
+# admin.site.register(Category)
+# admin.site.register(Patients, PatientAdmin)
 admin.site.register(Patient)
-admin.site.register(ins_Policy)
-admin.site.register(Upcoming_patients)
-admin.site.register(Upcoming_patient)
+# admin.site.register(ins_Policy)
+# admin.site.register(Upcoming_patients)
+# admin.site.register(Upcoming_patient)
+admin.site.register(Upcoming)
