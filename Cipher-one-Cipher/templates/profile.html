@@ -17,7 +17,14 @@
         {% if flag == 1 %}
         <p class =  "card-text">Upcoming booking: {{ booking_date }}</p>
         {% else %}
-        <button id="myBtn">Schedule An Appointment</button>
+        <button id="myBtn">Schedule An Appointment</button> <br><br>
+            <form method = "GET" action = "{%  url 'satisfaction_check' %}">
+                Rating <input type = "number" name = 'rating'> <br><br>
+            Review <input type = 'text' name = 'review' > <br><br>
+                <input type = "hidden" name = 'UID' value = "{{ UID }}">
+            <input type = 'submit' value = 'submit'>
+
+            </form>
         {% endif %}
 
         <!-- The Modal -->

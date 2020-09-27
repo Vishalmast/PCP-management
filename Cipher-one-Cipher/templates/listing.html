@@ -105,23 +105,15 @@
         <p class="card-text"><small class="text-muted"><b>Address:</b> {{doctor.Address}} </small></p>
         <p class="card-text"><small class="text-muted"><b>Distance:</b> {{doctor.distance}} KM </small></p>
         <p class="card-text"><small class="text-muted"><b>Ratings:</b> {{doctor.ratings}} out of 5 </small></p>
-        <button onclick="book()" value="{{doctor.NPI}}" id="make">Make My PCP</button>
+{#        <button onclick="book()" value="{{doctor.NPI}}" id="make">Make My PCP</button>#}
+          <form method=" GET" action = {% url 'book' %}>
+          <input type = "hidden" name = "npi" value="{{doctor.NPI}}" >
+              <input type = "submit" value = "Make My Pcp">
+          </form>
       </div>
   </div>
-  <script>
-    function book(){
-        var npi = document.getElementById("make").value
-        $.ajax({
-            type: "POST",
-            url: '{% url 'book' %}',
-            data: { csrfmiddlewaretoken: '{{ csrf_token }}', npi:npi },
-            success: function(){
-                alert("Done");
-            }
-        });
-    }
-</script>
-{% endfor %}  
+
+{% endfor %}
 <script>
     function openForm() {
       document.getElementById("myForm").style.display = "block";
