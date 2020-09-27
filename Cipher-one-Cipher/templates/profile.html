@@ -19,7 +19,7 @@
         {% else %}
         <button id="myBtn">Schedule An Appointment</button> <br><br>
             <form method = "GET" action = "{%  url 'satisfaction_check' %}">
-                Rating <input type = "number" name = 'rating'> <br><br>
+                Rating <input type = "number" name = 'rating' min="1" max="5"> <br><br>
             Review <input type = 'text' name = 'review' > <br><br>
                 <input type = "hidden" name = 'UID' value = "{{ UID }}">
             <input type = 'submit' value = 'submit'>

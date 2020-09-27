@@ -77,6 +77,9 @@
         }
     </style>
 </head>
+
+<a href="{% url "lists" %}">Discuss Your Symptoms With Us</a><br>
+
 <button class="btn" onclick="openForm()">Check Your PCP here</button><br>
 
 <div class="form-popup" id="myForm">
@@ -89,12 +92,10 @@
     <button type="button" class="btn cancel" onclick="closeForm()">Close</button>
   </form>
 </div>
-<a href="{% url "lists" %}">Discuss Your Symptoms With Us</a><br>
-
 
 <h3 class="mt-2">PCPs near You</h3>
 <b>{{name}}</b><br>
-<b>{{street}} , </b>  <b>{{city}} , {{state}}</b>
+<b>{{street}}  </b>  <b>{{city}}  {{state}}</b>
 {% for idx,doctor in dataframe.iterrows %}
  
   <div class="card mb-3">

@@ -635,7 +635,7 @@ def book(request):
     l_name = str(doc.Last_name).split()[1]
     type = str(doc.Type).split()[1]
     print(npi, f_name, l_name, type)
-    return render(request, "success.html")
+    return render(request, "success.html", {'UID': uid})
 
 def address(request):
     qs = Patient.objects.all()
