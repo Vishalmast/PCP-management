@@ -10,7 +10,7 @@
     {% else %}
     <h5> Thank you for reviewing. It seems you are satisfied with your pcp</h5>
         <form method = "GET" action = "{% url 'profile' %}">
-        <input type = "hidden" value = "{{ UID }}" name = "UID">
+        <input type = "hidden" value = "{{ UID }}" name = "UI">
         <input type = "submit" value = "Go to Profile page" >
 
     </form>

@@ -156,12 +156,15 @@ def doctor_change(request):
 def satisfaction_check(request):
     UID = request.GET.get("UID")
     rating = request.GET.get('rating')
-    rating = float(rating)
+    try:
+        rating = float(rating)
+    except:
+        rating = 1.0
     review = request.GET.get('review')
     print(rating)
     print(review)
     if compute_satisfaction(rating, review):
-        return render(request, "review_success.html")
+        return render(request, "review_success.html", {'UID': UID})
     else:
         return render(request, "review_success.html", {'flag': 1, 'UID': UID})
 
@@ -634,11 +637,12 @@ def book(request):
     df = patients.loc[patients['UID'] == UID]
     df['Current'][0] = NPI
     doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
-    doc = doc.loc[doc['National Provider Identifier'] == df['Current'][0]]
+    doc = doc.loc[doc['National Provider Identifier'] == list(df['Current'])[0]]
     doc = doc.rename(columns = {'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name','Last Name/Organization Name of the Provider': 'Last_name', 'Provider Type of the Provider': 'Type'})
     npi = str(doc.NPI).split()[1]
     f_name =  str(doc.First_name).split()[1]
     l_name = str(doc.Last_name).split()[1]
+    print(doc)
     type = str(doc.iloc[0, 13])
     print(npi, f_name, l_name, type)
     return render(request, "success.html", {'UID': uid})
