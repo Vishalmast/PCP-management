@@ -16,4 +16,5 @@ urlpatterns = [
     path('go',go, name='go'),
     path('schedule',schedule, name='schedule'),
     path('satisfaction_check', satisfaction_check, name = "satisfaction_check"),
+    path('doctor_change', doctor_change, name="doctor_change"),
 ]

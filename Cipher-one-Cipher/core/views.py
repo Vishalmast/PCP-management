@@ -103,6 +103,56 @@ disease_specialist_mapping = {'Migraine': 'Neurologists',
 patients = read_frame(qs)
 df_patient_data = read_frame(Patient.objects.all())
 df_upcoming_patients = read_frame(Upcoming.objects.all())
+
+def doctor_change(request):
+    UID = request.GET.get("UID")
+    t = Patient.objects.get(UID=UID)
+    name = t.Name
+    street = t.Street
+    city = t.City
+    state = t.State
+    pin = t.Pin
+    cur = t.Current
+
+    doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
+    doc = doc.loc[doc['National Provider Identifier'] == cur]
+    doc = doc.rename(columns={'Provider Type of the Provider': 'Type'})
+    type = str(doc.iloc[0, 13])
+    specialist = type
+    print(specialist)
+    doc_database = pd.read_csv('core\doctor_database_geocoded_final.csv')
+    from geopy.geocoders import ArcGIS
+    nom = ArcGIS()
+    location = nom.geocode(street + ' ' + city + ' ' + state + ' US')
+    user_lat = location.latitude
+    user_lon = location.longitude
+    print(user_lat, user_lon)
+    print(location.address)
+    doc_subset = doc_database[doc_database['Provider Type of the Provider'] == specialist]
+    from geopy import distance
+
+    for i in doc_subset.index:
+        doc_subset.loc[i, 'distance'] = distance.distance(
+            (doc_subset.loc[i, 'Latitude'], doc_subset.loc[i, 'Longitude']), (user_lat, user_lon)).km
+    doc_subset['score'] = doc_subset['distance'] - doc_subset['ratings'] * 2
+    search_result = doc_subset.sort_values('score')[
+        ['National Provider Identifier', 'First Name of the Provider',
+         'Last Name/Organization Name of the Provider',
+         'Provider Type of the Provider', 'Address', 'distance', 'ratings']]
+    search_result = search_result.rename(
+        columns={'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name',
+                 'Last Name/Organization Name of the Provider': 'Last_name',
+                 'Provider Type of the Provider': 'Type'})
+    search_result = search_result.head(50)
+    NPIs = search_result["NPI"].tolist()
+
+    search_result = search_result.round({"distance": 2, "ratings": 2})
+
+    return render(request, "listing.html",
+                  {'dataframe': search_result.head(20), 'name': name, 'street': street, 'city': city, 'state': state,
+                   'uid': UID})
+
+
 def satisfaction_check(request):
     UID = request.GET.get("UID")
     rating = request.GET.get('rating')
@@ -113,52 +163,7 @@ def satisfaction_check(request):
     if compute_satisfaction(rating, review):
         return render(request, "review_success.html")
     else:
-        t = Patient.objects.get(UID=UID)
-        name = t.Name
-        street = t.Street
-        city = t.City
-        state = t.State
-        pin = t.Pin
-        cur = t.Current
-
-        doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
-        doc = doc.loc[doc['National Provider Identifier'] == cur]
-        doc = doc.rename(columns={'Provider Type of the Provider': 'Type'})
-        type = str(doc.Type).split()[1]
-        specialist = type
-        print(specialist)
-        doc_database = pd.read_csv('core\doctor_database_geocoded_final.csv')
-        from geopy.geocoders import ArcGIS
-        nom = ArcGIS()
-        location = nom.geocode(street + ' ' + city + ' ' + state + ' US')
-        user_lat = location.latitude
-        user_lon = location.longitude
-        print(user_lat, user_lon)
-        print(location.address)
-        doc_subset = doc_database[doc_database['Provider Type of the Provider'] == specialist]
-        from geopy import distance
-
-        for i in doc_subset.index:
-            doc_subset.loc[i, 'distance'] = distance.distance(
-                (doc_subset.loc[i, 'Latitude'], doc_subset.loc[i, 'Longitude']), (user_lat, user_lon)).km
-        doc_subset['score'] = doc_subset['distance'] - doc_subset['ratings'] * 2
-        search_result = doc_subset.sort_values('score')[
-            ['National Provider Identifier', 'First Name of the Provider',
-             'Last Name/Organization Name of the Provider',
-             'Provider Type of the Provider', 'Address', 'distance', 'ratings']]
-        search_result = search_result.rename(
-            columns={'National Provider Identifier': 'NPI', 'First Name of the Provider': 'First_name',
-                     'Last Name/Organization Name of the Provider': 'Last_name',
-                     'Provider Type of the Provider': 'Type'})
-        search_result = search_result.head(50)
-        NPIs = search_result["NPI"].tolist()
-
-        search_result = search_result.round({"distance": 2, "ratings": 2})
-
-        return render(request, "listing.html",
-                      {'dataframe': search_result.head(20), 'name': name, 'street': street, 'city': city,
-                       'state': state,
-                       'uid': UID})
+        return render(request, "review_success.html", {'flag': 1, 'UID': UID})
 
 
 def replace_punc(s_out):
@@ -609,7 +614,8 @@ def profile(request):
     npi = str(doc.NPI).split()[1]
     f_name = str(doc.First_name).split()[1]
     l_name = str(doc.Last_name).split()[1]
-    type = str(doc.Type).split()[1]
+    # type = str(doc.Type).split()[1]
+    type = str(doc.iloc[0, 13])
     print(npi, f_name, l_name, type)
 
     return render(request, "profile.html", {'flag': flag, 'booking_date':booking_date,'UID': UID, 'pname': pname, 'street': street, 'city': city, 'state': state, 'npi': npi, 'f_name': f_name, 'l_name': l_name, 'type': type})
@@ -633,7 +639,7 @@ def book(request):
     npi = str(doc.NPI).split()[1]
     f_name =  str(doc.First_name).split()[1]
     l_name = str(doc.Last_name).split()[1]
-    type = str(doc.Type).split()[1]
+    type = str(doc.iloc[0, 13])
     print(npi, f_name, l_name, type)
     return render(request, "success.html", {'UID': uid})
 
@@ -671,7 +677,7 @@ def address(request):
     doc = pd.read_csv('core\doctor_database_geocoded_final.csv')
     doc = doc.loc[doc['National Provider Identifier'] == cur]
     doc = doc.rename(columns={'Provider Type of the Provider': 'Type'})
-    type = str(doc.Type).split()[1]
+    type = str(doc.iloc[0, 13])
     specialist = type
     print(specialist)
     doc_database = pd.read_csv('core\doctor_database_geocoded_final.csv')
@@ -682,7 +688,9 @@ def address(request):
     user_lon = location.longitude
     print(user_lat, user_lon)
     print(location.address)
+    print(specialist)
     doc_subset = doc_database[doc_database['Provider Type of the Provider'] == specialist]
+    print(doc_subset)
     from geopy import distance
 
     for i in doc_subset.index:
